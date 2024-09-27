@@ -1,7 +1,4 @@
-import uvicorn
-from fastapi import FastAPI
+if __name__ == '__main__':
+    from src.main import main
 
-app = FastAPI()
-
-if __name__ == "__main__":
-    uvicorn.run("src.__main__:app")
+    main()
