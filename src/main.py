@@ -7,13 +7,19 @@ from fastapi import (
     status
 )
 from sqlalchemy import (
+    and_,
     exists,
     select
 )
 
+from src.config import cfg
 from src.db import create_database
 from src.dependencies import DatabaseDependencies
-from src.models import VideoJson
+from src.models import (
+    Video,
+    VideoJson,
+    VideosModelsProcessed
+)
 from src.schemas import (
     GetAllVideosResponseSchema,
     GetVideoByIDResponse,
@@ -34,7 +40,30 @@ async def handle_polling(
     db: DatabaseDependencies,
     model_name: str,
 ) -> PollingResponse:
-    pass
+    _: VideosModelsProcessed
+    subquery = select(
+        exists().where(
+            and_(
+                VideosModelsProcessed.id == Video.id,
+                VideosModelsProcessed.model == model_name,
+            )
+        )
+    )
+    executed = await db.execute(
+        select(Video).where(~subquery).order_by(Video.id).limit(1)
+    )
+    result: Video | None = executed.scalar_one_or_none()
+    if result is None:
+        raise HTTPException(
+            detail="no new videos", status_code=status.HTTP_404_NOT_FOUND
+        )
+    return PollingResponse(
+        video_url=result.original_video_link,
+        video_callback_url=f"{cfg.app.bind_addr}/api/v1/video/"
+        f"{result.id}/upload/video",
+        json_callback_url=f"{cfg.app.bind_addr}/api/v1/video"
+        f"{result.id}/upload/json",
+    )
 
 
 @app.get("/api/v1/video")
@@ -93,8 +122,8 @@ async def main():
     await create_database()
     uvicorn.run(
         app="src:app",
-        host="0.0.0.0",
-        port=8000,
+        host=cfg.app.bind_host,
+        port=cfg.app.bind_port,
         reload=True,
     )
 

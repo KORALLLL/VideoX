@@ -66,6 +66,13 @@ class Video(Base):
         return ""
 
 
+class VideosModelsProcessed(Base):
+    __tablename__ = "video_model_processed"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    model: Mapped[str] = mapped_column(primary_key=True)
+
+
 class VideoJson(Base):
     __tablename__ = "videos_json"
 
