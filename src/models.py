@@ -2,18 +2,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import (
-    DateTime,
-    ForeignKey,
-    Integer,
-    Sequence
-)
+from sqlalchemy import DateTime, ForeignKey, Integer, Sequence
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column
-)
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.config import cfg
 from src.db import Base

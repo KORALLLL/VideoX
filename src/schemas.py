@@ -34,4 +34,12 @@ class PollingResponse(BaseModel):
 
 
 class UploadVideoResponse(BaseModel):
-    pass
+    id: int
+    name: str | None
+    status: Status
+    created_at: datetime
+    uploaded_at: datetime
+    original_video_path: str
+    processed_video_path: str | None
+    original_video_link: str | None
+    processed_video_link: str | None
