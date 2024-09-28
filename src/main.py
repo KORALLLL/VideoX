@@ -1,19 +1,21 @@
-import uvicorn
-from uuid import uuid4
 from datetime import datetime
+from uuid import uuid4
+
+import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
-from sqlalchemy import and_, exists, select, func
+from sqlalchemy import and_, exists, select
 
 from src.config import cfg
 from src.db import create_database
-from src.s3 import s3
 from src.dependencies import DatabaseDependencies
-from src.models import Video, VideoJson, VideosModelsProcessed, Status
+from src.models import Status, Video, VideoJson, VideosModelsProcessed
+from src.s3 import s3
 from src.schemas import (
     GetAllVideosResponseSchema,
     GetVideoByIDResponse,
     PollingResponse,
     UploadVideoResponse,
+    VideoInGetAllVideosResponse,
 )
 
 app = FastAPI()
@@ -60,7 +62,26 @@ async def handle_polling(
 async def handle_get_all_videos(
     db: DatabaseDependencies,
 ) -> GetAllVideosResponseSchema:
-    pass
+    stmt = (
+        select(Video)
+        .where(Video.status == Status.PROCESSED)  # type: ignore
+        .order_by(Video.id)
+    )
+    result = await db.execute(stmt)
+    videos: list[Video] = result.scalars().all()
+    result = GetAllVideosResponseSchema(
+        count=len(videos),
+        result=[
+            VideoInGetAllVideosResponse(
+                id=x.id,
+                name=x.name,
+                created_at=x.created_at,
+                image_url=x.original_video_link,
+            )
+            for x in videos
+        ],
+    )
+    return result
 
 
 @app.get("/api/v1/video/{video_id}")
@@ -130,6 +151,7 @@ async def handle_upload_json_result(
         processed_json=json,
     )
     db.add(uploaded)
+    await db.commit()
     db.add(
         VideosModelsProcessed(
             id=video_id,
