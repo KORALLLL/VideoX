@@ -3,6 +3,8 @@ from enum import Enum
 from typing import Any
 
 from sqlalchemy import (
+    DateTime,
+    ForeignKey,
     Integer,
     Sequence
 )
@@ -44,10 +46,6 @@ class Video(Base):
     uploaded_at: Mapped[datetime] = mapped_column()
     original_video_path: Mapped[str]
     processed_video_path: Mapped[str | None]
-    processed_json: Mapped[Any | None] = mapped_column(
-        JSONB,
-        nullable=True,
-    )
 
     @hybrid_property
     def original_video_link(self):
@@ -66,3 +64,24 @@ class Video(Base):
                 key=self.processed_video_link,
             )
         return ""
+
+
+class VideoJson(Base):
+    __tablename__ = "videos_json"
+
+    video_id: Mapped[int] = mapped_column(
+        ForeignKey(
+            "videos.id",
+            ondelete="CASCADE",
+            onupdate="CASCADE",
+        ),
+        primary_key=True,
+    )
+    model_name: Mapped[str] = mapped_column(primary_key=True)
+    processed_json: Mapped[Any] = mapped_column(
+        JSONB,
+    )
+    processed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+    )

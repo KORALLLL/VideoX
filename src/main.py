@@ -2,12 +2,18 @@ import uvicorn
 from fastapi import (
     FastAPI,
     File,
-    UploadFile
+    HTTPException,
+    UploadFile,
+    status
+)
+from sqlalchemy import (
+    exists,
+    select
 )
 
 from src.db import create_database
 from src.dependencies import DatabaseDependencies
-from src.models import Video
+from src.models import VideoJson
 from src.schemas import (
     GetAllVideosResponseSchema,
     GetVideoByIDResponse,
@@ -23,9 +29,10 @@ async def handle_ping() -> str:
     return "pong"
 
 
-@app.get("/api/v1/poll")
+@app.get("/api/v1/poll/{model_name}")
 async def handle_polling(
     db: DatabaseDependencies,
+    model_name: str,
 ) -> PollingResponse:
     pass
 
@@ -54,8 +61,32 @@ async def handle_upload_video(
     pass
 
 
-async def upload_video():
-    _: Video
+@app.post("/api/v1/video/{video_id}/upload/json/{model_name}")
+async def handle_upload_json_result(
+    db: DatabaseDependencies,
+    video_id: int,
+    model_name: str,
+    json: dict,
+) -> None:
+    stmt = select(exists(VideoJson)).where(
+        VideoJson.video_id == video_id,  # type: ignore
+        VideoJson.model_name == model_name,  # type: ignore
+    )
+    res = await db.execute(stmt)
+    result: bool = res.scalar_one_or_none()
+    if result:
+        raise HTTPException(
+            detail="json result already exists",
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
+    uploaded = VideoJson(
+        video_id=video_id,
+        model_name=model_name,
+        processed_json=json,
+    )
+    db.add(uploaded)
+    await db.commit()
 
 
 async def main():
