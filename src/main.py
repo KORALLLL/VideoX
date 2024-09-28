@@ -41,13 +41,15 @@ async def handle_polling(
     model_name: str,
 ) -> PollingResponse:
     _: VideosModelsProcessed
-    subquery = select(
-        exists().where(
+    subquery = (
+        select(VideosModelsProcessed)
+        .where(
             and_(
                 VideosModelsProcessed.id == Video.id,
                 VideosModelsProcessed.model == model_name,
             )
         )
+        .exists()
     )
     executed = await db.execute(
         select(Video).where(~subquery).order_by(Video.id).limit(1)
