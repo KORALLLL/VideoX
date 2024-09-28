@@ -9,6 +9,7 @@ from fastapi import (
 from sqlalchemy import (
     and_,
     exists,
+    not_,
     select
 )
 
@@ -40,7 +41,6 @@ async def handle_polling(
     db: DatabaseDependencies,
     model_name: str,
 ) -> PollingResponse:
-    _: VideosModelsProcessed
     subquery = (
         select(VideosModelsProcessed)
         .where(
@@ -52,7 +52,7 @@ async def handle_polling(
         .exists()
     )
     executed = await db.execute(
-        select(Video).where(~subquery).order_by(Video.id).limit(1)
+        select(Video).where(not_(subquery)).order_by(Video.id).limit(1)
     )
     result: Video | None = executed.scalar_one_or_none()
     if result is None:
