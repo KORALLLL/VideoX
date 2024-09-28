@@ -1,25 +1,14 @@
 import uvicorn
-from fastapi import (
-    FastAPI,
-    File,
-    HTTPException,
-    UploadFile,
-    status
-)
-from sqlalchemy import (
-    and_,
-    exists,
-    select
-)
+from uuid import uuid4
+from datetime import datetime
+from fastapi import FastAPI, File, HTTPException, UploadFile, status
+from sqlalchemy import and_, exists, select, func
 
 from src.config import cfg
 from src.db import create_database
+from src.s3 import s3
 from src.dependencies import DatabaseDependencies
-from src.models import (
-    Video,
-    VideoJson,
-    VideosModelsProcessed
-)
+from src.models import Video, VideoJson, VideosModelsProcessed, Status
 from src.schemas import (
     GetAllVideosResponseSchema,
     GetVideoByIDResponse,
@@ -88,7 +77,32 @@ async def handle_upload_video(
     name: str,
     video: UploadFile = File(...),
 ) -> UploadVideoResponse:
-    pass
+    now = datetime.utcnow()
+    video_location = f"videos/{uuid4()}_{video.filename}"
+    created_video = Video(
+        name=name,
+        status=Status.UPLOADED,
+        created_at=now,
+        uploaded_at=now,
+        original_video_path=video_location,
+    )
+    db.add(created_video)
+    await db.commit()
+    await db.refresh(created_video)
+
+    s3.upload_file(video.file, video_location)
+
+    return UploadVideoResponse(
+        id=created_video.id,
+        name=created_video.name,
+        status=created_video.status,
+        created_at=created_video.created_at,
+        uploaded_at=created_video.uploaded_at,
+        original_video_path=created_video.original_video_path,
+        processed_video_path=created_video.processed_video_path,
+        original_video_link=created_video.original_video_link,
+        processed_video_link=created_video.processed_video_link,
+    )
 
 
 @app.post("/api/v1/video/{video_id}/upload/json/{model_name}")

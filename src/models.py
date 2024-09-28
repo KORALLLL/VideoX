@@ -2,18 +2,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import (
-    DateTime,
-    ForeignKey,
-    Integer,
-    Sequence
-)
+from sqlalchemy import DateTime, ForeignKey, Integer, Sequence
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column
-)
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.config import cfg
 from src.db import Base
@@ -58,10 +50,10 @@ class Video(Base):
 
     @hybrid_property
     def processed_video_link(self):
-        if self.processed_video_link not in (None, ""):
+        if self.processed_video_path not in (None, ""):
             return s3.generate_link(
                 bucket=cfg.s3.aws_bucket,
-                key=self.processed_video_link,
+                key=self.processed_video_path,
             )
         return ""
 
