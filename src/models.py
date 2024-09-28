@@ -38,6 +38,7 @@ class Video(Base):
     uploaded_at: Mapped[datetime] = mapped_column()
     original_video_path: Mapped[str]
     processed_video_path: Mapped[str | None]
+    original_preview_path: Mapped[str]
 
     @hybrid_property
     def original_video_link(self):
@@ -54,6 +55,15 @@ class Video(Base):
             return s3.generate_link(
                 bucket=cfg.s3.aws_bucket,
                 key=self.processed_video_path,
+            )
+        return ""
+
+    @hybrid_property
+    def preview_link(self):
+        if self.preview_link not in (None, ""):
+            return s3.generate_link(
+                bucket=cfg.s3.aws_bucket,
+                key=self.preview_link,
             )
         return ""
 
