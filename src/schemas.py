@@ -20,6 +20,7 @@ class VideoInGetAllVideosResponse(BaseModel):
     name: str
     created_at: datetime
     image_url: str
+    status: Status
 
 
 class GetAllVideosResponseSchema(BaseModel):

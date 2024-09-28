@@ -62,11 +62,7 @@ async def handle_polling(
 async def handle_get_all_videos(
     db: DatabaseDependencies,
 ) -> GetAllVideosResponseSchema:
-    stmt = (
-        select(Video)
-        .where(Video.status == Status.PROCESSED)  # type: ignore
-        .order_by(Video.id)
-    )
+    stmt = select(Video).order_by(Video.id)
     result = await db.execute(stmt)
     videos: list[Video] = result.scalars().all()
     result = GetAllVideosResponseSchema(
@@ -77,6 +73,7 @@ async def handle_get_all_videos(
                 name=x.name,
                 created_at=x.created_at,
                 image_url=x.original_video_link,
+                status=x.status,
             )
             for x in videos
         ],
