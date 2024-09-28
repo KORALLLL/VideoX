@@ -50,10 +50,10 @@ class Video(Base):
 
     @hybrid_property
     def processed_video_link(self):
-        if self.processed_video_link not in (None, ""):
+        if self.processed_video_path not in (None, ""):
             return s3.generate_link(
                 bucket=cfg.s3.aws_bucket,
-                key=self.processed_video_link,
+                key=self.processed_video_path,
             )
         return ""
 

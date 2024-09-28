@@ -1,4 +1,5 @@
 import uvicorn
+from uuid import uuid4
 from datetime import datetime
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from sqlalchemy import exists, select, func
@@ -51,28 +52,21 @@ async def handle_upload_video(
     name: str,
     video: UploadFile = File(...),
 ) -> UploadVideoResponse:
-    stmt = select(func.max(Video.id))
-    id = await db.execute(stmt)
-    id: int | None = id.scalar_one_or_none()
-    id = id + 1 if id else 1
-
-    video_location = f"videos/{id}_{name}"
-    s3.upload_file(video.file, video_location)
     now = datetime.utcnow()
-
+    video_location = f"videos/{uuid4()}_{video.filename}"
     created_video = Video(
-        id=id,
         name=name,
         status=Status.UPLOADED,
         created_at=now,
         uploaded_at=now,
         original_video_path=video_location,
     )
-    await db.add(created_video)
-    await db.commit
-    stmt = select(Video).where(id=created_video.id)
-    created_video = await db.execute(stmt)
-    created_video: Video = created_video.scalar()
+    db.add(created_video)
+    await db.commit()
+    await db.refresh(created_video)
+
+    s3.upload_file(video.file, video_location)
+
     return UploadVideoResponse(
         id=created_video.id,
         name=created_video.name,
