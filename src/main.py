@@ -116,6 +116,12 @@ async def handle_upload_json_result(
         processed_json=json,
     )
     db.add(uploaded)
+    db.add(
+        VideosModelsProcessed(
+            id=video_id,
+            model=model_name,
+        )
+    )
     await db.commit()
 
 
