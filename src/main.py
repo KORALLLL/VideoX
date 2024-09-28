@@ -2,12 +2,13 @@ import uvicorn
 from uuid import uuid4
 from datetime import datetime
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
-from sqlalchemy import exists, select, func
+from sqlalchemy import and_, exists, select, func
+
 from src.config import cfg
 from src.db import create_database
 from src.s3 import s3
 from src.dependencies import DatabaseDependencies
-from src.models import VideoJson, Video, Status
+from src.models import Video, VideoJson, VideosModelsProcessed, Status
 from src.schemas import (
     GetAllVideosResponseSchema,
     GetVideoByIDResponse,
@@ -28,7 +29,31 @@ async def handle_polling(
     db: DatabaseDependencies,
     model_name: str,
 ) -> PollingResponse:
-    pass
+    subquery = (
+        select(VideosModelsProcessed)
+        .where(
+            and_(
+                VideosModelsProcessed.id == Video.id,
+                VideosModelsProcessed.model == model_name,
+            )
+        )
+        .exists()
+    )
+    executed = await db.execute(
+        select(Video).where(~subquery).order_by(Video.id).limit(1)
+    )
+    result: Video | None = executed.scalar_one_or_none()
+    if result is None:
+        raise HTTPException(
+            detail="no new videos", status_code=status.HTTP_404_NOT_FOUND
+        )
+    return PollingResponse(
+        video_url=result.original_video_link,
+        video_callback_url=f"{cfg.app.bind_addr}/api/v1/video/"
+        f"{result.id}/upload/video",
+        json_callback_url=f"{cfg.app.bind_addr}/api/v1/video/"
+        f"{result.id}/upload/json",
+    )
 
 
 @app.get("/api/v1/video")
@@ -105,6 +130,12 @@ async def handle_upload_json_result(
         processed_json=json,
     )
     db.add(uploaded)
+    db.add(
+        VideosModelsProcessed(
+            id=video_id,
+            model=model_name,
+        )
+    )
     await db.commit()
 
 
@@ -112,8 +143,8 @@ async def main():
     await create_database()
     uvicorn.run(
         app="src:app",
-        host="0.0.0.0",
-        port=8000,
+        host=cfg.app.bind_host,
+        port=cfg.app.bind_port,
         reload=True,
     )
 
