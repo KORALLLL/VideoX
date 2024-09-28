@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
-from sqlalchemy import and_, exists, select
+from sqlalchemy import and_, exists, select, update
 
 from src.config import cfg
 from src.db import create_database
@@ -121,6 +121,38 @@ async def handle_upload_video(
         original_video_link=created_video.original_video_link,
         processed_video_link=created_video.processed_video_link,
     )
+
+
+@app.post("/api/v1/video/{video_id}/upload/video")
+async def handle_upload_resulted_video(
+    db: DatabaseDependencies,
+    video_id: int,
+    video: UploadFile = File(...),
+) -> str:
+    now = datetime.utcnow()
+    not_found = HTTPException(
+        detail="not found",
+        status_code=status.HTTP_404_NOT_FOUND,
+    )
+    res = await db.execute(select(Video).where(Video.id == video_id))
+    video_from_db = res.scalar_one_or_none()
+    if video_from_db is None:
+        raise not_found
+    video_location = f"processed/{uuid4()}_{video.filename}"
+    stmt = (
+        update(Video)
+        .values(
+            processed_video_path=video_location,
+            status=Status.PROCESSED,
+        )
+        .where(Video.id == video_id)  # type: ignore
+    )
+    s3.upload_file(video.file, video_location)
+    await db.execute(stmt)
+    db.add(VideosModelsProcessed(video_id, "video", now))
+    await db.commit()
+
+    return s3.generate_link(cfg.s3.aws_bucket, video_location)
 
 
 @app.post("/api/v1/video/{video_id}/upload/json/{model_name}")
