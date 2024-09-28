@@ -1,7 +1,4 @@
-from typing import (
-    Annotated,
-    AsyncGenerator
-)
+from typing import Annotated, AsyncGenerator
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -2,15 +2,9 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from sqlalchemy import (
-    Integer,
-    Sequence
-)
+from sqlalchemy import Integer, Sequence
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column
-)
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db import Base
 
