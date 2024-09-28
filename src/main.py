@@ -9,7 +9,6 @@ from fastapi import (
 from sqlalchemy import (
     and_,
     exists,
-    not_,
     select
 )
 
@@ -52,7 +51,7 @@ async def handle_polling(
         .exists()
     )
     executed = await db.execute(
-        select(Video).where(not_(subquery)).order_by(Video.id).limit(1)
+        select(Video).where(~subquery).order_by(Video.id).limit(1)
     )
     result: Video | None = executed.scalar_one_or_none()
     if result is None:
@@ -63,7 +62,7 @@ async def handle_polling(
         video_url=result.original_video_link,
         video_callback_url=f"{cfg.app.bind_addr}/api/v1/video/"
         f"{result.id}/upload/video",
-        json_callback_url=f"{cfg.app.bind_addr}/api/v1/video"
+        json_callback_url=f"{cfg.app.bind_addr}/api/v1/video/"
         f"{result.id}/upload/json",
     )
 
