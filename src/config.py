@@ -18,6 +18,12 @@ PathsSourcesDict: dict[Path, Type[PydanticBaseSettingsSource]] = {
 }
 
 
+class App(BaseModel):
+    bind_addr: str = "http://127.0.0.1:8000"
+    bind_host: str = "0.0.0.0"
+    bind_port: int = 8000
+
+
 class Database(BaseModel):
     postgres_username: str = "postgres"
     postgres_db: str = "postgres"
@@ -47,6 +53,7 @@ class S3(BaseModel):
 class Config(BaseSettings):
     database: Database = Database()
     s3: S3 = S3()
+    app: App = App()
 
     model_config = SettingsConfigDict(
         extra="ignore",
