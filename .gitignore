@@ -170,3 +170,4 @@ cython_debug/
 /dataSources.local.xml
 config.toml
 .DS_Store
+video.MP4
