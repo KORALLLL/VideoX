@@ -86,7 +86,37 @@ async def handle_get_video_by_id(
     db: DatabaseDependencies,
     video_id: int,
 ) -> GetVideoByIDResponse:
-    pass
+    stmt = select(Video).where(Video.id == video_id)
+    result = await db.execute(stmt)
+    video: Video | None = result.scalar_one_or_none()
+    if video is None:
+        raise HTTPException(
+            detail="no video with provided id",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    related_jsons = select(VideoJson).where(VideoJson.video_id == video.id)
+    result = await db.execute(related_jsons)
+    jsons: list[VideoJson] = result.scalars().all()
+    max_processed_time = None
+    processed = {}
+    for json in jsons:
+        if (
+            max_processed_time is None
+            or json.processed_at > max_processed_time
+        ):
+            max_processed_time = json.processed_at
+        processed[json.model_name] = json.processed_json
+    response = GetVideoByIDResponse(
+        processed_video_url=video.processed_video_link,
+        processed_at=max_processed_time,
+        id=video.id,
+        name=video.name,
+        status=video.status,
+        uploaded_at=video.uploaded_at,
+        original_video_url=video.original_video_link,
+        processed=processed,
+    )
+    return response
 
 
 @app.post("/api/v1/video")

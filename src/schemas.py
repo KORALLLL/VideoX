@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, AnyStr
 
 from pydantic import BaseModel
 
@@ -13,6 +14,7 @@ class GetVideoByIDResponse(BaseModel):
     processed_at: datetime | None
     original_video_url: str
     processed_video_url: str | None
+    processed: dict[str, Any]
 
 
 class VideoInGetAllVideosResponse(BaseModel):
