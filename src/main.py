@@ -86,7 +86,7 @@ async def handle_get_video_by_id(
     db: DatabaseDependencies,
     video_id: int,
 ) -> GetVideoByIDResponse:
-    stmt = select(Video).where(Video.id == video_id)
+    stmt = select(Video).where(Video.id == video_id)  # type: ignore
     result = await db.execute(stmt)
     video: Video | None = result.scalar_one_or_none()
     if video is None:
@@ -94,7 +94,9 @@ async def handle_get_video_by_id(
             detail="no video with provided id",
             status_code=status.HTTP_404_NOT_FOUND,
         )
-    related_jsons = select(VideoJson).where(VideoJson.video_id == video.id)
+    related_jsons = select(VideoJson).where(
+        VideoJson.video_id == video.id,  # type: ignore
+    )
     result = await db.execute(related_jsons)
     jsons: list[VideoJson] = result.scalars().all()
     max_processed_time = None
@@ -164,7 +166,9 @@ async def handle_upload_resulted_video(
         detail="not found",
         status_code=status.HTTP_404_NOT_FOUND,
     )
-    res = await db.execute(select(Video).where(Video.id == video_id))
+    res = await db.execute(
+        select(Video).where(Video.id == video_id),  # type: ignore
+    )
     video_from_db = res.scalar_one_or_none()
     if video_from_db is None:
         raise not_found
