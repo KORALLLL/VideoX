@@ -1,6 +1,9 @@
 import uvicorn
 from fastapi import FastAPI
 
+from src.db import create_database
+from src.models import Video
+
 app = FastAPI()
 
 
@@ -9,7 +12,12 @@ async def get_index() -> str:
     return "pong"
 
 
-def main():
+async def upload_video():
+    xd: Video
+
+
+async def main():
+    await create_database()
     uvicorn.run(
         app="src:app",
         host="0.0.0.0",
@@ -19,4 +27,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+
+    asyncio.run(main())

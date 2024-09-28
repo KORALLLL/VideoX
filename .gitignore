@@ -169,4 +169,5 @@ cython_debug/
 /dataSources/
 /dataSources.local.xml
 config.toml
+docker_config.toml
 .DS_Store

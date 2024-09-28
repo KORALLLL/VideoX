@@ -1,6 +1,6 @@
 services:
-  videox:
-    container_name: videox
+  backend:
+    container_name: backend
     ports:
       - "8000:8000"
     restart: always
@@ -17,10 +17,12 @@ services:
     image: postgres
     restart: always
     user: postgres
+    ports:
+      - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=postgres
+      - POSTGRES_DB=videox
       - POSTGRES_PASSWORD=postgres
     healthcheck:
       test: ["CMD", "pg_isready"]
