@@ -63,7 +63,10 @@ class VideosModelsProcessed(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     model: Mapped[str] = mapped_column(primary_key=True)
-    processed_at: Mapped[datetime | None]
+    processed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.utcnow,
+    )
 
 
 class VideoJson(Base):
