@@ -83,6 +83,27 @@ async def handle_get_all_videos(
     return result
 
 
+@app.get("/api/v1/video/{video_id}/json")
+async def handle_get_video_by_id(
+    db: DatabaseDependencies,
+    video_id: int,
+) -> dict:
+    stmt = select(Video).where(Video.id == video_id)  # type: ignore
+    result = await db.execute(stmt)
+    video: Video | None = result.scalar_one_or_none()
+    if video is None:
+        raise HTTPException(
+            detail="no video with provided id",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    related_jsons = select(VideoJson).where(
+        VideoJson.video_id == video.id,  # type: ignore
+    )
+    result = await db.execute(related_jsons)
+    jsons: list[VideoJson] = result.scalars().all()
+    return {json.model_name: json.processed_json for json in jsons}
+
+
 @app.get("/api/v1/video/{video_id}")
 async def handle_get_video_by_id(
     db: DatabaseDependencies,
