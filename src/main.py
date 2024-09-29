@@ -2,12 +2,14 @@ from datetime import datetime
 from uuid import uuid4
 
 import uvicorn
+import io
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from sqlalchemy import and_, exists, select, update
 
 from src.config import cfg
 from src.db import create_database
 from src.dependencies import DatabaseDependencies
+from src.utils import get_first_frame_from_binary
 from src.models import Status, Video, VideoJson, VideosModelsProcessed
 from src.s3 import s3
 from src.schemas import (
@@ -129,18 +131,23 @@ async def handle_upload_video(
 ) -> UploadVideoResponse:
     now = datetime.utcnow()
     video_location = f"videos/{uuid4()}_{video.filename}"
+    preview_location = f"videos/preview_{uuid4()}_{video.filename}.jpg"
+    video_bytes = await video.read()
+    video_file_like = io.BytesIO(video_bytes)
+    preview = get_first_frame_from_binary(video_bytes)
+    s3.upload_file(video_file_like, video_location)
+    s3.upload_file(io.BytesIO(preview), preview_location)
     created_video = Video(
         name=name,
         status=Status.UPLOADED,
         created_at=now,
         uploaded_at=now,
         original_video_path=video_location,
+        original_preview_path=preview_location,
     )
     db.add(created_video)
     await db.commit()
     await db.refresh(created_video)
-
-    s3.upload_file(video.file, video_location)
 
     return UploadVideoResponse(
         id=created_video.id,
@@ -152,6 +159,8 @@ async def handle_upload_video(
         processed_video_path=created_video.processed_video_path,
         original_video_link=created_video.original_video_link,
         processed_video_link=created_video.processed_video_link,
+        original_preview_path=created_video.original_preview_path,
+        preview_link=created_video.preview_link,
     )
 
 
