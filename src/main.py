@@ -74,7 +74,7 @@ async def handle_get_all_videos(
                 id=x.id,
                 name=x.name,
                 created_at=x.created_at,
-                image_url=x.original_video_link,
+                image_url=x.preview_link,
                 status=x.status,
             )
             for x in videos
