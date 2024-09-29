@@ -60,10 +60,10 @@ class Video(Base):
 
     @hybrid_property
     def preview_link(self):
-        if self.preview_link not in (None, ""):
+        if self.original_preview_path not in (None, ""):
             return s3.generate_link(
                 bucket=cfg.s3.aws_bucket,
-                key=self.preview_link,
+                key=self.original_preview_path,
             )
         return ""
 

@@ -44,3 +44,5 @@ class UploadVideoResponse(BaseModel):
     processed_video_path: str | None
     original_video_link: str | None
     processed_video_link: str | None
+    original_preview_path: str
+    preview_link: str

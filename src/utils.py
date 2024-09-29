@@ -1,26 +1,20 @@
 import cv2
 import numpy as np
-from typing import BinaryIO, Optional
 import os
 
 
-def get_first_frame_from_binary(binary_io: BinaryIO) -> Optional[np.ndarray]:
-    # Читаем данные из BinaryIO
-    binary_io.seek(0)  # Убедимся, что мы находимся в начале файла
-    video_data = binary_io.read()
-
+def get_first_frame_from_binary(video_data: bytes) -> bytes | None:
     # Преобразуем бинарные данные в массив numpy
     np_data = np.frombuffer(video_data, np.uint8)
 
     # Декодируем видео из массива numpy
-    # Для этого нам нужно создать временный файл
     temp_file_path = "temp_video.mp4"
     with open(temp_file_path, "wb") as temp_file:
         temp_file.write(np_data)
 
     # Открываем временный видеофайл
     cap = cv2.VideoCapture(temp_file_path)
-    os.remove("temp_video.mp4")
+    os.remove(temp_file_path)
 
     # Проверяем, удалось ли открыть видео
     if not cap.isOpened():
@@ -38,7 +32,14 @@ def get_first_frame_from_binary(binary_io: BinaryIO) -> Optional[np.ndarray]:
         print("Ошибка: Не удалось прочитать кадр.")
         return None
 
-    return frame
+    # Кодируем кадр в формат JPEG
+    success, buffer = cv2.imencode(".jpg", frame)
+    if not success:
+        print("Ошибка: Не удалось закодировать кадр в JPEG.")
+        return None
+
+    # Возвращаем байты изображения
+    return buffer.tobytes()
 
 
 if __name__ == "__main__":
