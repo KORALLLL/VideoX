@@ -131,7 +131,7 @@ async def handle_get_video_by_id(
             or json.processed_at > max_processed_time
         ):
             max_processed_time = json.processed_at
-        processed[json.model_name] = json.processed_json
+        processed[json.model_name.replace("-", "_")] = json.processed_json
     response = GetVideoByIDResponse(
         processed_video_url=video.processed_video_link,
         processed_at=max_processed_time,
