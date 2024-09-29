@@ -1,0 +1,52 @@
+services:
+  backend:
+    container_name: backend
+    ports:
+      - "8000:8000"
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../docker_config.toml:/app/config.toml
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "-m", "src"]
+  db:
+    image: postgres
+    restart: always
+    user: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=videox
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 1s
+      timeout: 1s
+      retries: 50
+
+  minio:
+    image: minio/minio
+    command: server --console-address :9005 /data
+    ports:
+      - "9000:9000"
+      - "9005:9005"
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=66665529d7230c666c5d9e49c6818b8abd8047e7b2bab1c5af615f4e6778350e
+    restart: always
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+volumes:
+  db-data:
+  minio-data:
