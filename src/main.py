@@ -98,6 +98,7 @@ async def handle_get_video_by_id(
         )
     related_jsons = select(VideoJson).where(
         VideoJson.video_id == video.id,  # type: ignore
+        VideoJson.model_name.notin_(["yolo"]),
     )
     result = await db.execute(related_jsons)
     jsons: list[VideoJson] = result.scalars().all()
